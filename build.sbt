@@ -32,3 +32,4 @@ tpolecatExcludeOptions ++= Set(
 )
 
 Compile / mainClass := Some("Main")
+
