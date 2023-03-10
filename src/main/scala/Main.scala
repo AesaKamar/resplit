@@ -61,70 +61,73 @@ object Inputs {
 
 object Main extends EpollApp {
   import cats.syntax.applicative._
+  import scala.util.chaining._
 
   def run(args: List[String]): IO[ExitCode] =
     OParser
       .parse(Inputs.commandLineParser, args, Inputs())
       .fold(ifEmpty = IO(ExitCode.Error)) { input =>
-        // Get from a tile if provided, otherwise stdin
+        // Get from a file if provided, otherwise stdin
         input.file
           .fold(ifEmpty =
             fs2.io
               .stdin[IO](1024)
-          ) { file =>
-            fs2.io.file
-              .Files[IO]
-              .readAll(Path.apply(file.getPath))
+          ) {
+            _.getPath
+              .pipe(Path.apply)
+              .pipe(fs2.io.file.Files[IO].readAll)
           }
           .through(fs2.text.utf8.decode)
           .through(fs2.text.lines)
           // Split files based on the matched regex
           .through { stream =>
-            if (input.suppressMatched)
-              stream.split(input.regexMatch.matches(_))
+            if (input.suppressMatched) stream.split(input.regexMatch.matches(_))
             else splitInclusive(stream)(input.regexMatch.matches(_))
           }
           .zipWithIndex
           // Create the directory to store outputs if it doesn't already exist
-          .concurrently(
-            Stream.eval(
-              input.directory
-                .map(Path.apply)
-                .fold(ifEmpty = IO.unit) { dir =>
-                  fs2.io.file
-                    .Files[IO]
-                    .exists(dir)
-                    .flatMap {
-                      case true => IO.unit
-                      case false =>
-                        fs2.io.file
-                          .Files[IO]
-                          .createDirectory(dir)
-                    }
-                }
-            )
-          )
+          .concurrently(Stream.eval(createDirectoryOrDoNothing(input.directory)))
           .evalTap { case (c, i) =>
-            val path: Path = inferPathFromFirstMatchedLineOfChunk(
-              config = input,
-              c = c,
-              i = i
-            )
-            // Write out a new file stream
-            fs2.Stream
-              .chunk(c)
-              .intersperse("\n")
-              .append(fs2.Stream.emit("\n"))
-              .through(fs2.text.utf8.encode)
-              .through(fs2.io.file.Files[IO].writeAll(path)(_))
-              .compile
-              .drain
-              .flatTap(_ => IO(Console.println(s"$path\t")))
+            // get the new file name based on the matched regex
+            inferPathFromFirstMatchedLineOfChunk(input, c, i)
+              // Write out a new file stream
+              .pipe(writeChunkToPathAndPrint(c, _))
+
           }
           .compile
           .drain
           .map(_ => ExitCode.Success)
       }
+
+  /**
+   * If the directory exists, return an empty effect
+   * Otherwise, go create it!
+   */
+  def createDirectoryOrDoNothing(pathString: Option[String]) = pathString
+    .map(Path.apply)
+    .fold(ifEmpty = IO.unit) { dir =>
+      fs2.io.file
+        .Files[IO]
+        .exists(dir)
+        .flatMap {
+          case true => IO.unit
+          case false =>
+            fs2.io.file
+              .Files[IO]
+              .createDirectory(dir)
+        }
+    }
+
+
+  def writeChunkToPathAndPrint(c: Chunk[String], path: Path): IO[Unit] = fs2.Stream
+    .chunk(c)
+    .intersperse("\n")
+    .append(fs2.Stream.emit("\n"))
+    .through(fs2.text.utf8.encode)
+    .through(fs2.io.file.Files[IO].writeAll(path)(_))
+    .compile
+    .drain
+    .flatTap(_ => IO(Console.println(s"$path\t")))
 
   def inferPathFromFirstMatchedLineOfChunk(
       config: Inputs,
@@ -132,12 +135,12 @@ object Main extends EpollApp {
       i: Long
   ): Path = {
     val fileContext: String = c.head
-      .flatMap(config.regexMatch.findFirstIn)
+      .flatMap(config.regexMatch.findFirstIn(_))
       .map { matchedChars =>
         config.regexSub.fold(ifEmpty = matchedChars) { providedRegexSub =>
           try matchedChars.replaceFirst(config.regexMatch.regex, providedRegexSub)
           catch
-            case e: Throwable =>
+            case _ =>
               Console.err.println(
                 s"invalid regex: on $matchedChars for ${config.regexMatch.regex} with substitution $providedRegexSub"
               )
