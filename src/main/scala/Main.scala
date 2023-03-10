@@ -45,8 +45,10 @@ object Inputs {
         .text("Directory to write the split files into")
         .action((arg, conf) => conf.copy(directory = Some(arg))),
       opt[File]('f', "file")
+        .text("Read from the specified file instead of stdin")
         .action((arg, conf) => conf.copy(file = Some(arg))),
       opt[Unit]("suppressMatched")
+        .text("Include the line that matched the regexMatch arg as the firt line in the split files")
         .action((_, conf) => conf.copy(suppressMatched = true))
     )
   }
