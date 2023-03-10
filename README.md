@@ -23,4 +23,49 @@ Splits a file based on a regex. split files will be prefixed by digits, and name
 ```
 
 
-### Installation 
+## Examples
+
+### Input: 
+--- 
+```
+cat1
+cat2
+cat3
+dog1
+cat4
+cat5
+cat6
+dog2
+cat7
+cat8
+cat9
+```
+
+```
+> cat testfile | resplit '(dog)\d' '$1'
+```
+
+### Output: 
+--- 
+`000_`
+```
+cat1
+cat2
+cat3
+```
+
+`001_dog`
+```
+dog1
+cat4
+cat5
+cat6
+```
+
+`002_dog`
+```
+dog2
+cat7
+cat8
+cat9
+```
