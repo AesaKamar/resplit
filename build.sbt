@@ -21,7 +21,8 @@ libraryDependencies ++= Seq(
   "co.fs2"         %%% "fs2-io"      % "3.6.1",
   "org.typelevel"  %%% "cats-effect" % "3.4.8",
   "org.typelevel"  %%% "cats-core"   % "2.9.0",
-  "com.lihaoyi"    %%% "pprint"      % "0.8.1"
+  "com.lihaoyi"    %%% "pprint"      % "0.8.1",
+  "com.monovore"   %%% "decline"     % "2.4.1"
 )
 libraryDependencies ++= Seq(
   "org.scalameta" %%% "munit" % "1.0.0-M7" % Test
@@ -32,4 +33,3 @@ tpolecatExcludeOptions ++= Set(
 )
 
 Compile / mainClass := Some("Main")
-
