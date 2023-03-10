@@ -25,16 +25,24 @@ object Inputs {
     import builder._
     OParser.sequence(
       programName("resplit"),
+      note(
+        "Splits a file based on a regex. split files will be prefixed by digits, " +
+          "and named by the contents of the matched regular expression"
+      ),
       help("help").text("prints this usage text"),
       arg[String]("regexMatch")
         .required()
+        .text("A regular expression to split the file on ")
         .action((arg, conf) => conf.copy(regexMatch = arg.r)),
       arg[Option[String]]("regexSub")
         .optional()
+        .text("A regular expression substitution expression to use to format the output filenames")
         .action((arg, conf) => conf.copy(regexSub = arg)),
       opt[Int]('n', "digits")
+        .text("Number of digits to left-pad the split filenames with")
         .action((arg, conf) => conf.copy(digits = arg)),
       opt[String]('d', "directory")
+        .text("Directory to write the split files into")
         .action((arg, conf) => conf.copy(directory = Some(arg))),
       opt[File]('f', "file")
         .action((arg, conf) => conf.copy(file = Some(arg))),
@@ -70,6 +78,25 @@ object Main extends EpollApp {
             else splitInclusive(stream)(input.regexMatch.matches(_))
           }
           .zipWithIndex
+          // Create the directory to store outputs if it doesn't already exist
+          .concurrently(
+            Stream.eval(
+              input.directory
+                .map(Path.apply)
+                .fold(ifEmpty = IO.unit) { dir =>
+                  fs2.io.file
+                    .Files[IO]
+                    .exists(dir)
+                    .flatMap {
+                      case true => IO.unit
+                      case false =>
+                        fs2.io.file
+                          .Files[IO]
+                          .createDirectory(dir)
+                    }
+                }
+            )
+          )
           .evalTap { case (c, i) =>
             val path: Path = inferPathFromFirstMatchedLineOfChunk(
               config = input,
