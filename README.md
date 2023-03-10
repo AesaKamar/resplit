@@ -12,14 +12,18 @@ A reimplementation of the gnu command line utility `csplit` https://man7.org/lin
 > resplit --help
 Usage: resplit [options] regexMatch [regexSub]
 
-Splits a file based on a regex. split files will be prefixed by digits, and named by the contents of the matched regular expression
-  --help                   prints this usage text
+Splits a file based on a regex. split files will be prefixed by digits,
+and named by the contents of the matched regular expression.
+
+Outputs names of files created to stdout
+
   regexMatch               A regular expression to split the file on
   regexSub                 A regular expression substitution expression to use to format the output filenames
   -n, --digits <value>     Number of digits to left-pad the split filenames with
   -d, --directory <value>  Directory to write the split files into
   -f, --file <value>       Read from the specified file instead of stdin
-  --suppressMatched        Include the line that matched the regexMatch arg as the firt line in the split files
+  --suppressMatched        Include the line that matched the regexMatch arg as the first line in the split files
+  --help                   prints this usage text
 ```
 
 

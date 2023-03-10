@@ -26,10 +26,12 @@ object Inputs {
     OParser.sequence(
       programName("resplit"),
       note(
-        "Splits a file based on a regex. split files will be prefixed by digits, " +
-          "and named by the contents of the matched regular expression"
+        """Splits a file based on a regex. split files will be prefixed by digits,
+          |and named by the contents of the matched regular expression.
+          |
+          |Outputs names of files created to stdout
+          |""".stripMargin
       ),
-      help("help").text("prints this usage text"),
       arg[String]("regexMatch")
         .required()
         .text("A regular expression to split the file on ")
@@ -48,8 +50,11 @@ object Inputs {
         .text("Read from the specified file instead of stdin")
         .action((arg, conf) => conf.copy(file = Some(arg))),
       opt[Unit]("suppressMatched")
-        .text("Include the line that matched the regexMatch arg as the firt line in the split files")
-        .action((_, conf) => conf.copy(suppressMatched = true))
+        .text(
+          "Include the line that matched the regexMatch arg as the first line in the split files"
+        )
+        .action((_, conf) => conf.copy(suppressMatched = true)),
+      help("help").text("prints this usage text")
     )
   }
 }
