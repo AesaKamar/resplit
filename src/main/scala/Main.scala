@@ -3,63 +3,120 @@ import cats.effect.{ExitCode, IO, IOApp}
 import epollcat.EpollApp
 import fs2.io.file.Path
 import fs2.{Chunk, Pull, Stream}
+import scopt.{OParser, OParserBuilder}
 
+import java.io.File
 import scala.annotation.tailrec
 import scala.util.matching.Regex
+
+case class Inputs(
+    regexMatch: Regex = "".r,
+    regexSub: Option[String] = None,
+    digits: Int = 3,
+    directory: Option[String] = None,
+    file: Option[File] = None,
+    suppressMatched: Boolean = false
+)
+
+object Inputs {
+  private val builder: OParserBuilder[Inputs] = OParser.builder[Inputs]
+
+  val commandLineParser: OParser[Unit, Inputs] = {
+    import builder._
+    OParser.sequence(
+      programName("resplit"),
+      help("help").text("prints this usage text"),
+      arg[String]("regexMatch")
+        .required()
+        .action((arg, conf) => conf.copy(regexMatch = arg.r)),
+      arg[Option[String]]("regexSub")
+        .optional()
+        .action((arg, conf) => conf.copy(regexSub = arg)),
+      opt[Int]('n', "digits")
+        .action((arg, conf) => conf.copy(digits = arg)),
+      opt[String]('d', "directory")
+        .action((arg, conf) => conf.copy(directory = Some(arg))),
+      opt[File]('f', "file")
+        .action((arg, conf) => conf.copy(file = Some(arg))),
+      opt[Unit]("suppressMatched")
+        .action((_, conf) => conf.copy(suppressMatched = true))
+    )
+  }
+}
 
 object Main extends EpollApp {
   import cats.syntax.applicative._
 
   def run(args: List[String]): IO[ExitCode] =
-    val regexToMatch: Regex = args.head.r
-    val regexSub            = args.drop(1).headOption
-    fs2.io
-      .stdin[IO](1024)
-      .through(fs2.text.utf8.decode)
-      .through(fs2.text.lines)
-      .through(splitInclusive(_)(regexToMatch.matches(_)))
-      .zipWithIndex
-      .evalTap { case (c, i) =>
-        val path = inferPathFromFirstMatchedLineOfChunk(
-          regex = regexToMatch,
-          regexSub = regexSub,
-          c = c,
-          i = i
-        )
-        fs2.Stream
-          .chunk(c)
-          .intersperse("\n")
-          .append(fs2.Stream.emit("\n"))
-          .through(fs2.text.utf8.encode)
-          .through(fs2.io.file.Files[IO].writeAll(path)(_))
+    OParser
+      .parse(Inputs.commandLineParser, args, Inputs())
+      .fold(ifEmpty = IO(ExitCode.Error)) { input =>
+        // Get from a tile if provided, otherwise stdin
+        input.file
+          .fold(ifEmpty =
+            fs2.io
+              .stdin[IO](1024)
+          ) { file =>
+            fs2.io.file
+              .Files[IO]
+              .readAll(Path.apply(file.getPath))
+          }
+          .through(fs2.text.utf8.decode)
+          .through(fs2.text.lines)
+          // Split files based on the matched regex
+          .through { stream =>
+            if (input.suppressMatched)
+              stream.split(input.regexMatch.matches(_))
+            else splitInclusive(stream)(input.regexMatch.matches(_))
+          }
+          .zipWithIndex
+          .evalTap { case (c, i) =>
+            val path: Path = inferPathFromFirstMatchedLineOfChunk(
+              config = input,
+              c = c,
+              i = i
+            )
+            // Write out a new file stream
+            fs2.Stream
+              .chunk(c)
+              .intersperse("\n")
+              .append(fs2.Stream.emit("\n"))
+              .through(fs2.text.utf8.encode)
+              .through(fs2.io.file.Files[IO].writeAll(path)(_))
+              .compile
+              .drain
+              .flatTap(_ => IO(Console.println(s"$path\t")))
+          }
           .compile
           .drain
-          .flatTap(_ => IO(Console.println(s"$path\t")))
+          .map(_ => ExitCode.Success)
       }
-      .compile
-      .drain
-      .map(_ => ExitCode.Success)
 
   def inferPathFromFirstMatchedLineOfChunk(
-      regex: Regex,
-      regexSub: Option[String],
+      config: Inputs,
       c: Chunk[String],
       i: Long
   ): Path = {
     val fileContext: String = c.head
-      .flatMap(regex.findFirstIn)
+      .flatMap(config.regexMatch.findFirstIn)
       .map { matchedChars =>
-        regexSub.fold(ifEmpty = matchedChars) { providedRegexSub =>
-          try matchedChars.replaceFirst(regex.regex, providedRegexSub)
+        config.regexSub.fold(ifEmpty = matchedChars) { providedRegexSub =>
+          try matchedChars.replaceFirst(config.regexMatch.regex, providedRegexSub)
           catch
             case e: Throwable =>
-              Console.err.println(s"invalid regex: on $matchedChars for ${regex.regex} with substitution $providedRegexSub")
+              Console.err.println(
+                s"invalid regex: on $matchedChars for ${config.regexMatch.regex} with substitution $providedRegexSub"
+              )
               ""
         }
       }
       .getOrElse("")
-    val iii: String = leftPad(i.toString, 3, '0')
-    Path.apply(s"${iii}_$fileContext")
+    val iii: String = leftPad(i.toString, config.digits, '0')
+    config.directory
+      .fold(ifEmpty = Path.apply(s"${iii}_$fileContext")) { dir =>
+        Path.apply(s"$dir/${iii}_$fileContext")
+      }
+
   }
 
   def leftPad(s: String, n: Int, c: Char): String = s.reverse
