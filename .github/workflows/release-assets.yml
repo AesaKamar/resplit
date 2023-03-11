@@ -1,0 +1,22 @@
+# See: https://eugene-babichenko.github.io/blog/2020/05/09/github-actions-cross-platform-auto-releases/
+name: Release Assets
+
+
+on:
+  workflow_dispatch:
+
+release_assets:
+  name: Release assets
+  needs: create_release # we need to know the upload URL
+  runs-on: ${{ matrix.config.os }} # we run many different builds
+  strategy:
+    # just an example matrix
+    matrix:
+      config:
+        - os: ubuntu-latest
+        - os: macos-latest
+        - os: windows-latest
+  steps:
+    - uses: actions/checkout@v2
+    - name: Release
+      run: sbt ';set nativeConfig / nativeMode := "releaseSize";nativeLink;'

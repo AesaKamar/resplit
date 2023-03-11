@@ -6,13 +6,16 @@ enablePlugins(ScalaNativePlugin)
 logLevel := Level.Info
 
 // import to add Scala Native options
-import scala.scalanative.build._
 
 // defaults set with common options shown
 nativeConfig ~= { c =>
-  c.withLTO(LTO.none)           // thin
-    .withMode(Mode.releaseSize) // releaseFast
-    .withGC(GC.immix)           // commix
+  c
+    // https://scala-native.org/en/stable/user/sbt.html#garbage-collectors
+    .withLTO(scala.scalanative.build.LTO.none)
+    // https://scala-native.org/en/stable/user/sbt.html#compilation-modes
+    .withMode(scala.scalanative.build.Mode.debug)
+    // https://scala-native.org/en/stable/user/sbt.html#garbage-collectors
+    .withGC(scala.scalanative.build.GC.commix)
 }
 libraryDependencies ++= Seq(
   "co.fs2"           %%% "fs2-core"    % "3.6.1",
