@@ -11,8 +11,8 @@ import scala.util.matching.Regex
 
 object Resplit {
 
-  import cats.syntax.applicative._
-  import scala.util.chaining._
+  import cats.syntax.applicative.*
+  import scala.util.chaining.*
 
   def resplit(input: Inputs): fs2.Stream[IO, (Path, Chunk[String])] =
     // Get from a file if provided, otherwise stdin
@@ -54,18 +54,19 @@ object Resplit {
         }
     }
 
-  def writeChunkToPathAndPrint(c: Chunk[String], path: Path, isSilent: Boolean = false): IO[Unit] = fs2.Stream
-    .chunk(c)
-    .intersperse("\n")
-    .append(fs2.Stream.emit("\n"))
-    .through(fs2.text.utf8.encode)
-    .through(fs2.io.file.Files[IO].writeAll(path)(_))
-    .compile
-    .drain
-    .flatTap{_ =>
-      if(isSilent) IO.unit
-      else IO(Console.println(s"$path\t"))
-    }
+  def writeChunkToPathAndPrint(c: Chunk[String], path: Path, isSilent: Boolean = false): IO[Unit] =
+    fs2.Stream
+      .chunk(c)
+      .intersperse("\n")
+      .append(fs2.Stream.emit("\n"))
+      .through(fs2.text.utf8.encode)
+      .through(fs2.io.file.Files[IO].writeAll(path)(_))
+      .compile
+      .drain
+      .flatTap { _ =>
+        if (isSilent) IO.unit
+        else IO(Console.println(s"$path\t"))
+      }
 
   // TODO this is technically unsafe because is has a console printing effect in it
   def inferPathFromFirstMatchedLineOfChunk(
@@ -78,13 +79,15 @@ object Resplit {
       .map { matchedChars =>
         config.regexSub.fold(ifEmpty = matchedChars) { providedRegexSub =>
           try matchedChars.replaceFirst(config.regexMatch.regex, providedRegexSub)
-          catch
+          catch {
+
             case _ =>
               if (!config.silentMode)
                 Console.err.println(
                   s"invalid regex: on $matchedChars for ${config.regexMatch.regex} with substitution $providedRegexSub"
                 )
               ""
+          }
         }
       }
       .getOrElse("")
