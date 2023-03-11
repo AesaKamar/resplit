@@ -13,7 +13,7 @@ nativeConfig ~= { c =>
     // https://scala-native.org/en/stable/user/sbt.html#garbage-collectors
     .withLTO(scala.scalanative.build.LTO.none)
     // https://scala-native.org/en/stable/user/sbt.html#compilation-modes
-    .withMode(scala.scalanative.build.Mode.debug)
+    .withMode(scala.scalanative.build.Mode.releaseSize)
     // https://scala-native.org/en/stable/user/sbt.html#garbage-collectors
     .withGC(scala.scalanative.build.GC.commix)
 }

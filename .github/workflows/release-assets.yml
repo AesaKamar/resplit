@@ -18,4 +18,4 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Release
-        run: sbt ';set nativeConfig / nativeMode := "releaseSize";nativeLink;'
+        run: sbt nativeLink
