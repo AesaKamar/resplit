@@ -3,6 +3,9 @@ name: Release Assets
 
 
 on:
+  push:
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
 jobs:
   release_assets_mac_linux:
@@ -21,6 +24,7 @@ jobs:
         run: cp resplitEpollApp/target/scala-3.2.2/resplitepollapp-out resplit-${{ matrix.config.os }}
       - name: Release
         uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: resplit-${{ matrix.config.os }}
 #  release_assets_windows:
