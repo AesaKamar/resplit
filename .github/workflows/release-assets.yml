@@ -5,17 +5,22 @@ name: Release Assets
 on:
   workflow_dispatch:
 jobs:
-  release_assets:
-    name: Release assets
-    runs-on: ${{ matrix.config.os }} # we run many different builds
+  release_assets_mac_linux:
+    name: Release Assets Mac and Linux
+    runs-on: ${{ matrix.config.os }}
     strategy:
-      # just an example matrix
       matrix:
         config:
           - os: ubuntu-latest
           - os: macos-latest
-          - os: windows-latest
     steps:
       - uses: actions/checkout@v2
       - name: Release
         run: sbt nativeLink
+  release_assets_windows:
+    name: Release Assets
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Release
+        run: sbt "resplitEpollApp/nativeLink"
