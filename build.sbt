@@ -10,9 +10,9 @@ import scala.scalanative.build._
 
 // defaults set with common options shown
 nativeConfig ~= { c =>
-  c.withLTO(LTO.none)     // thin
+  c.withLTO(LTO.none)           // thin
     .withMode(Mode.releaseSize) // releaseFast
-    .withGC(GC.immix)     // commix
+    .withGC(GC.immix)           // commix
 }
 libraryDependencies ++= Seq(
   "co.fs2"           %%% "fs2-core"    % "3.6.1",

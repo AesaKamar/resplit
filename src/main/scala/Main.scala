@@ -99,10 +99,8 @@ object Main extends EpollApp {
           .map(_ => ExitCode.Success)
       }
 
-  /**
-   * If the directory exists, return an empty effect
-   * Otherwise, go create it!
-   */
+  /** If the directory exists, return an empty effect Otherwise, go create it!
+    */
   def createDirectoryOrDoNothing(pathString: Option[String]) = pathString
     .map(Path.apply)
     .fold(ifEmpty = IO.unit) { dir =>
@@ -117,7 +115,6 @@ object Main extends EpollApp {
               .createDirectory(dir)
         }
     }
-
 
   def writeChunkToPathAndPrint(c: Chunk[String], path: Path): IO[Unit] = fs2.Stream
     .chunk(c)
