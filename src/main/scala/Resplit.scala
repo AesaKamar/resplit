@@ -16,7 +16,7 @@ object Resplit {
 
   def resplit(input: Inputs): fs2.Stream[IO, (Path, Chunk[String])] =
     // Get from a file if provided, otherwise stdin
-    input.file
+    input.inputFileInsteadOfStdin
       .fold(ifEmpty = fs2.io.stdin[IO](1024)) {
         _.getPath
           .pipe(Path.apply)
@@ -31,11 +31,11 @@ object Resplit {
       }
       .zipWithIndex
       // Create the directory to store outputs if it doesn't already exist
-      .concurrently(Stream.eval(createDirectoryOrDoNothing(input.directory)))
+      .concurrently(Stream.eval(createDirectoryOrDoNothing(input.outputDirectory)))
       // get the new file name based on the matched regex
       .map { (c: Chunk[String], i: Long) => (inferPathFromFirstMatchedLineOfChunk(input, c, i), c) }
       // Write out a new file stream
-      .evalTap { (p: Path, c: Chunk[String]) => writeChunkToPathAndPrint(c, p) }
+      .evalTap { (p: Path, c: Chunk[String]) => writeChunkToPathAndPrint(c, p, input.silentMode) }
 
   /** If the directory exists, return an empty effect Otherwise, go create it!
     */
@@ -54,7 +54,7 @@ object Resplit {
         }
     }
 
-  def writeChunkToPathAndPrint(c: Chunk[String], path: Path): IO[Unit] = fs2.Stream
+  def writeChunkToPathAndPrint(c: Chunk[String], path: Path, isSilent: Boolean = false): IO[Unit] = fs2.Stream
     .chunk(c)
     .intersperse("\n")
     .append(fs2.Stream.emit("\n"))
@@ -62,8 +62,12 @@ object Resplit {
     .through(fs2.io.file.Files[IO].writeAll(path)(_))
     .compile
     .drain
-    .flatTap(_ => IO(Console.println(s"$path\t")))
+    .flatTap{_ =>
+      if(isSilent) IO.unit
+      else IO(Console.println(s"$path\t"))
+    }
 
+  // TODO this is technically unsafe because is has a console printing effect in it
   def inferPathFromFirstMatchedLineOfChunk(
       config: Inputs,
       c: Chunk[String],
@@ -76,15 +80,16 @@ object Resplit {
           try matchedChars.replaceFirst(config.regexMatch.regex, providedRegexSub)
           catch
             case _ =>
-              Console.err.println(
-                s"invalid regex: on $matchedChars for ${config.regexMatch.regex} with substitution $providedRegexSub"
-              )
+              if (!config.silentMode)
+                Console.err.println(
+                  s"invalid regex: on $matchedChars for ${config.regexMatch.regex} with substitution $providedRegexSub"
+                )
               ""
         }
       }
       .getOrElse("")
-    val iii: String = leftPad(i.toString, config.digits, '0')
-    config.directory
+    val iii: String = leftPad(i.toString, config.filenamePaddingDigits, '0')
+    config.outputDirectory
       .fold(ifEmpty = Path.apply(s"${iii}_$fileContext")) { dir =>
         Path.apply(s"$dir/${iii}_$fileContext")
       }

@@ -6,10 +6,11 @@ import scala.util.matching.Regex
 case class Inputs(
     regexMatch: Regex = "".r,
     regexSub: Option[String] = None,
-    digits: Int = 3,
-    directory: Option[String] = None,
-    file: Option[File] = None,
-    suppressMatched: Boolean = false
+    filenamePaddingDigits: Int = 3,
+    outputDirectory: Option[String] = None,
+    inputFileInsteadOfStdin: Option[File] = None,
+    suppressMatched: Boolean = false,
+    silentMode: Boolean = false
 )
 
 object Inputs {
@@ -36,18 +37,21 @@ object Inputs {
         .action((arg, conf) => conf.copy(regexSub = arg)),
       opt[Int]('n', "digits")
         .text("Number of digits to left-pad the split filenames with")
-        .action((arg, conf) => conf.copy(digits = arg)),
+        .action((arg, conf) => conf.copy(filenamePaddingDigits = arg)),
       opt[String]('d', "directory")
         .text("Directory to write the split files into")
-        .action((arg, conf) => conf.copy(directory = Some(arg))),
+        .action((arg, conf) => conf.copy(outputDirectory = Some(arg))),
       opt[File]('f', "file")
         .text("Read from the specified file instead of stdin")
-        .action((arg, conf) => conf.copy(file = Some(arg))),
+        .action((arg, conf) => conf.copy(inputFileInsteadOfStdin = Some(arg))),
       opt[Unit]("suppressMatched")
         .text(
           "Include the line that matched the regexMatch arg as the first line in the split files"
         )
         .action((_, conf) => conf.copy(suppressMatched = true)),
+      opt[Unit]('s', "quiet")
+        .text("Quiet")
+        .action((_, conf) => conf.copy(silentMode = true)),
       help("help").text("prints this usage text")
     )
   }
