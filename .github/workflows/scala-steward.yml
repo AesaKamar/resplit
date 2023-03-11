@@ -1,9 +1,12 @@
+# See; https://github.com/scala-steward-org/scala-steward-action#installation
+name: Launch Scala Steward
+
 on:
   workflow_dispatch:
   schedule:
+  #   https://elmah.io/tools/cron-parser/#0_0_*_*_0
+  #   "At 12:00 AM, only on Sunday"
     - cron: '0 0 * * 0'
-
-name: Launch Scala Steward
 
 jobs:
   scala-steward:

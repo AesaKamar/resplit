@@ -118,7 +118,6 @@ object Main extends EpollApp {
         }
     }
 
-
   def writeChunkToPathAndPrint(c: Chunk[String], path: Path): IO[Unit] = fs2.Stream
     .chunk(c)
     .intersperse("\n")
