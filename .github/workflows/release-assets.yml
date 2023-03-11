@@ -18,7 +18,9 @@ jobs:
       - name: Build
         run: sbt "resplitEpollApp/nativeLink"
       - name: Move
-        run: cp resplitEpollApp/target/scala-3.2.2/resplitepollapp-out resplit_${{ matrix.config.os }}
+        run: cp resplitEpollApp/target/scala-3.2.2/resplitepollapp-out resplit_${{ matrix.config.os }} && ls
+      - name: Check if works
+        run: cat testfile | resplit_${{ matrix.config.os }} '(dog)\d' '$1' -d tmp
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
