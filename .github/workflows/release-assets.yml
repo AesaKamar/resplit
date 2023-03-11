@@ -16,11 +16,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Release
-        run: sbt nativeLink
+        run: sbt "resplitEpollApp/nativeLink"
   release_assets_windows:
-    name: Release Assets
+    name: Release Assets Windows
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
       - name: Release
-        run: sbt "resplitEpollApp/nativeLink"
+        run: sbt "resplitIOApp/nativeLink"
