@@ -35,4 +35,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: resplit-${{ matrix.config.os }}
+          files: |
+            resplit-${{ matrix.config.os }}
+            resplit-${{ matrix.config.os }}.exe
