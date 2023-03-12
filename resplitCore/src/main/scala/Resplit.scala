@@ -68,7 +68,7 @@ object Resplit {
         else IO(Console.println(s"$path\t"))
       }
 
-  // TODO this is technically unsafe because is has a console printing effect in it
+  // TODO this is technically impure because is has a console printing effect in it
   def inferPathFromFirstMatchedLineOfChunk(
       config: Inputs,
       c: Chunk[String],

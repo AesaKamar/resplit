@@ -9,6 +9,8 @@ import java.io.File
 import scala.annotation.tailrec
 import scala.util.matching.Regex
 
+/** For platforms that do not support the Epoll API, we use this
+  */
 object Main extends IOApp {
 
   def run(args: List[String]): IO[ExitCode] =

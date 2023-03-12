@@ -3,8 +3,7 @@
 
 A command line utility for splitting files based on a regular expression
 
-A reimplementation of the gnu command line utility `csplit` https://man7.org/linux/man-pages/man1/csplit.1.html
-
+A reimplementation of gnu `csplit` https://man7.org/linux/man-pages/man1/csplit.1.html
 
 
 ## Usage
@@ -22,10 +21,14 @@ Outputs names of files created to stdout
   -n, --digits <value>     Number of digits to left-pad the split filenames with
   -d, --directory <value>  Directory to write the split files into
   -f, --file <value>       Read from the specified file instead of stdin
+  -s, --quiet              Quiet
   --suppressMatched        Include the line that matched the regexMatch arg as the first line in the split files
   --help                   prints this usage text
 ```
 
+## Installation
+- Download the latest release for your target platform 
+- `chmod +x` the downloaded file to give it executable permissions
 
 ## Examples
 
