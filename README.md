@@ -11,7 +11,7 @@ Built with [ScalaNative](https://scala-native.org/en/stable/), [fs2](https://git
 ## Demo
 Streaming "The Adventures of Sherlock Holmes" with `wget` and spliting by chapter regex into unique files
 
-https://user-images.githubusercontent.com/4334491/224519302-35abbafc-de3a-4be4-92d4-c29352de3617.mov
+![Resplit Mov](https://user-images.githubusercontent.com/4334491/224520599-25a2ba89-1565-417a-9150-3f88a20c5b35.gif)
 
 
 ## Usage
