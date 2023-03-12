@@ -24,12 +24,12 @@ jobs:
       - name: Build executable
         if: ${{ matrix.config.os != 'windows-latest' }}
         run: |
-          sbt "nativeLink" &&
+          sbt ";set nativeMode := scala.scalanative.build.Mode.releaseSize.name; nativeLink" &&
           cp target/scala-3.2.2/resplit-out resplit-${{ matrix.config.os }}
       - name: Build executable
         if: ${{ matrix.config.os == 'windows-latest' }}
         run: |
-          sbt "nativeLink" && 
+          sbt ";set nativeMode := scala.scalanative.build.Mode.releaseSize.name; nativeLink" && 
           cp target/scala-3.2.2/resplit-out.exe resplit-${{ matrix.config.os }}.exe
       - name: Release
         uses: softprops/action-gh-release@v1

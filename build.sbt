@@ -10,7 +10,7 @@ nativeConfig ~= { configuration =>
     // https://scala-native.org/en/stable/user/sbt.html#garbage-collectors
     .withLTO(scala.scalanative.build.LTO.none)
     // https://scala-native.org/en/stable/user/sbt.html#compilation-modes
-    .withMode(scala.scalanative.build.Mode.releaseSize)
+    .withMode(scala.scalanative.build.Mode.debug)
     // https://scala-native.org/en/stable/user/sbt.html#garbage-collectors
     .withGC(scala.scalanative.build.GC.commix)
 }
