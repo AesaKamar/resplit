@@ -30,7 +30,7 @@ jobs:
         if: ${{ matrix.config.os == 'windows-latest' }}
         run: |
           sbt "nativeLink" && 
-          cp target/scala-3.2.2/resplit.exe resplit-${{ matrix.config.os }}.exe
+          cp target/scala-3.2.2/resplit-out.exe resplit-${{ matrix.config.os }}.exe
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
