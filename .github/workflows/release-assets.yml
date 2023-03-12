@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 jobs:
   release_assets:
-    name: Release Assets Mac and Linux
+    name: Release Assets
     runs-on: ${{ matrix.config.os }}
     strategy:
       matrix:
@@ -30,6 +30,7 @@ jobs:
         if: ${{ matrix.config.os == 'windows-latest' }}
         run: |
           sbt "resplitIOApp/nativeLink" && 
+          ls resplitIOApp/target/scala-3.2.2/ &&
           cp resplitIOApp/target/scala-3.2.2/resplitioapp-out resplit-${{ matrix.config.os }}
       - name: Release
         uses: softprops/action-gh-release@v1
