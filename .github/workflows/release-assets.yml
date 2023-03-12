@@ -22,15 +22,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build EpollApp
-        if: ${{ matrix.config.os }} != 'windows-latest'
+        if: ${{ matrix.config.os != 'windows-latest' }}
         run: |
           sbt "resplitEpollApp/nativeLink" &&
-          cp resplitEpollApp/target/scala-$SCALA_VERSION/resplitepollapp-out resplit-${{ matrix.config.os }}
+          cp "resplitEpollApp/target/scala-$SCALA_VERSION/resplitepollapp-out" resplit-${{ matrix.config.os }}
       - name: Build IOApp
-        if: ${{ matrix.config.os }} == 'windows-latest'
+        if: ${{ matrix.config.os == 'windows-latest' }}
         run: |
           sbt "resplitIOApp/nativeLink" && 
-          cp resplitIOApp/target/scala-$SCALA_VERSION/resplitioapp-out resplit-${{ matrix.config.os }}
+          cp "resplitIOApp/target/scala-$SCALA_VERSION/resplitioapp-out" resplit-${{ matrix.config.os }}
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
