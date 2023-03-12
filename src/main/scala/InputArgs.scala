@@ -3,20 +3,24 @@ import scopt.{OParser, OParserBuilder}
 import java.io.File
 import scala.util.matching.Regex
 
-case class Inputs(
-    regexMatch: Regex = "".r,
-    regexSub: Option[String] = None,
+case class InputArgs(
+    regexToMatch: Regex = "".r,
+    regexToSub: Option[String] = None,
     filenamePaddingDigits: Int = 3,
-    outputDirectory: Option[String] = None,
+    outputDirectory: Option[File] = None,
     inputFileInsteadOfStdin: Option[File] = None,
     suppressMatched: Boolean = false,
     silentMode: Boolean = false
 )
 
-object Inputs {
-  private val builder: OParserBuilder[Inputs] = OParser.builder[Inputs]
+/** Use [[OParserBuilder]] API to specify how to take input args from the command line and make them
+  * user friendly
+  */
+object InputArgs {
+  import scala.util.chaining._
+  private val builder: OParserBuilder[InputArgs] = OParser.builder[InputArgs]
 
-  val commandLineParser: OParser[Unit, Inputs] = {
+  val commandLineParser: OParser[Unit, InputArgs] = {
     import builder._
     OParser.sequence(
       programName("resplit"),
@@ -27,22 +31,25 @@ object Inputs {
           |Outputs names of files created to stdout
           |""".stripMargin
       ),
-      arg[String]("regexMatch")
+      arg[String]("regexToMatch")
         .required()
         .text("A regular expression to split the file on ")
-        .action((arg, conf) => conf.copy(regexMatch = arg.r)),
-      arg[Option[String]]("regexSub")
+        .action((arg, conf) => conf.copy(regexToMatch = arg.r)),
+      arg[Option[String]]("regexToSub")
         .optional()
         .text("A regular expression substitution expression to use to format the output filenames")
-        .action((arg, conf) => conf.copy(regexSub = arg)),
+        .action((arg, conf) => conf.copy(regexToSub = arg)),
       opt[Int]('n', "digits")
         .text("Number of digits to left-pad the split filenames with")
+        .validate(n => (n > 0 && n <= 128).pipe(Either.cond(_, (), "Not a valid number of digits")))
         .action((arg, conf) => conf.copy(filenamePaddingDigits = arg)),
-      opt[String]('d', "directory")
+      opt[File]('d', "directory")
         .text("Directory to write the split files into")
+        .validate(_.isDirectory.pipe(Either.cond(_, (), "Not a valid directory")))
         .action((arg, conf) => conf.copy(outputDirectory = Some(arg))),
       opt[File]('f', "file")
         .text("Read from the specified file instead of stdin")
+        .validate(_.isFile.pipe(Either.cond(_, (), "Not a valid file")))
         .action((arg, conf) => conf.copy(inputFileInsteadOfStdin = Some(arg))),
       opt[Unit]("suppressMatched")
         .text(

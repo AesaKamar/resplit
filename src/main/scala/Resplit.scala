@@ -1,6 +1,5 @@
 import cats.Applicative
 import cats.effect.{ExitCode, IO, IOApp}
-import epollcat.EpollApp
 import fs2.io.file.Path
 import fs2.{Chunk, Pull, Stream}
 import scopt.{OParser, OParserBuilder}
@@ -14,9 +13,9 @@ object Resplit {
   import cats.syntax.applicative.*
   import scala.util.chaining.*
 
-  def resplit(input: Inputs): fs2.Stream[IO, (Path, Chunk[String])] =
+  def resplit(args: InputArgs): fs2.Stream[IO, (Path, Chunk[String])] =
     // Get from a file if provided, otherwise stdin
-    input.inputFileInsteadOfStdin
+    args.inputFileInsteadOfStdin
       .fold(ifEmpty = fs2.io.stdin[IO](1024)) {
         _.getPath
           .pipe(Path.apply)
@@ -25,28 +24,33 @@ object Resplit {
       .through(fs2.text.utf8.decode)
       .through(fs2.text.lines)
       // Split files based on the matched regex
-      .through { stream =>
-        if (input.suppressMatched) stream.split(input.regexMatch.matches(_))
-        else splitInclusive(stream)(input.regexMatch.matches(_))
+      .through { inputStream =>
+        if (args.suppressMatched) inputStream.split(thisLine => args.regexToMatch.matches(thisLine))
+        else splitInclusive(inputStream)(thisLine => args.regexToMatch.matches(thisLine))
       }
       .zipWithIndex
       // Create the directory to store outputs if it doesn't already exist
-      .concurrently(Stream.eval(createDirectoryOrDoNothing(input.outputDirectory)))
+      .concurrently(createDirectoryOrDoNothing(args.outputDirectory).pipe(Stream.eval))
       // get the new file name based on the matched regex
-      .map { (c: Chunk[String], i: Long) => (inferPathFromFirstMatchedLineOfChunk(input, c, i), c) }
+      .map { (chunkOfLines, chunkNumber) =>
+        (inferPathFromFirstMatchedLineOfChunk(args, chunkOfLines, chunkNumber), chunkOfLines)
+      }
       // Write out a new file stream
-      .evalTap { (p: Path, c: Chunk[String]) => writeChunkToPathAndPrint(c, p, input.silentMode) }
+      .evalTap { (path, chunkOfLines) =>
+        writeChunkToPathAndPrint(chunkOfLines, path, args.silentMode)
+      }
 
   /** If the directory exists, return an empty effect Otherwise, go create it!
     */
-  def createDirectoryOrDoNothing(pathString: Option[String]): IO[Unit] = pathString
+  def createDirectoryOrDoNothing(outputDirectory: Option[File]): IO[Unit] = outputDirectory
+    .map(_.getPath)
     .map(Path.apply)
     .fold(ifEmpty = IO.unit) { dir =>
       fs2.io.file
         .Files[IO]
         .exists(dir)
-        .flatMap {
-          if (_) IO.unit
+        .flatMap { exists =>
+          if (exists) IO.unit
           else
             fs2.io.file
               .Files[IO]
@@ -70,29 +74,26 @@ object Resplit {
 
   // TODO this is technically impure because is has a console printing effect in it
   def inferPathFromFirstMatchedLineOfChunk(
-      config: Inputs,
+      args: InputArgs,
       c: Chunk[String],
       i: Long
   ): Path = {
     val fileContext: String = c.head
-      .flatMap(config.regexMatch.findFirstIn(_))
+      .flatMap(args.regexToMatch.findFirstIn(_))
       .map { matchedChars =>
-        config.regexSub.fold(ifEmpty = matchedChars) { providedRegexSub =>
-          try matchedChars.replaceFirst(config.regexMatch.regex, providedRegexSub)
-          catch {
-
+        args.regexToSub.fold(ifEmpty = matchedChars) { providedRegexSub =>
+          try matchedChars.replaceFirst(args.regexToMatch.regex, providedRegexSub)
+          catch
             case _ =>
-              if (!config.silentMode)
-                Console.err.println(
-                  s"invalid regex: on $matchedChars for ${config.regexMatch.regex} with substitution $providedRegexSub"
-                )
+              if (!args.silentMode)
+                s"invalid regex: on $matchedChars for ${args.regexToMatch.regex} with substitution $providedRegexSub"
+                  .pipe(Console.err.println)
               ""
-          }
         }
       }
       .getOrElse("")
-    val iii: String = leftPad(i.toString, config.filenamePaddingDigits, '0')
-    config.outputDirectory
+    val iii: String = leftPad(i.toString, args.filenamePaddingDigits, '0')
+    args.outputDirectory
       .fold(ifEmpty = Path.apply(s"${iii}_$fileContext")) { dir =>
         Path.apply(s"$dir/${iii}_$fileContext")
       }

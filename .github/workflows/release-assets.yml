@@ -21,16 +21,16 @@ jobs:
           - os: windows-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Build EpollApp
+      - name: Build executable
         if: ${{ matrix.config.os != 'windows-latest' }}
         run: |
-          sbt "resplitEpollApp/nativeLink" &&
-          cp resplitEpollApp/target/scala-3.2.2/resplitepollapp-out resplit-${{ matrix.config.os }}
-      - name: Build IOApp
+          sbt "nativeLink" &&
+          cp target/scala-3.2.2/resplit-out resplit-${{ matrix.config.os }}
+      - name: Build executable
         if: ${{ matrix.config.os == 'windows-latest' }}
         run: |
-          sbt "resplitIOApp/nativeLink" && 
-          cp resplitIOApp/target/scala-3.2.2/resplitioapp-out.exe resplit-${{ matrix.config.os }}.exe
+          sbt "nativeLink" && 
+          cp target/scala-3.2.2/resplit.exe resplit-${{ matrix.config.os }}.exe
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')

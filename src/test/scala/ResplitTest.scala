@@ -33,7 +33,7 @@ class ResplitTest extends munit.CatsEffectSuite {
   }
 
   test("inferPathFromFirstMatchedLineOfChunk") {
-    val inputs = Inputs(regexMatch = "(dog)\\d".r, regexSub = Some("$1"), filenamePaddingDigits = 3)
+    val inputs = InputArgs(regexToMatch = "(dog)\\d".r, regexToSub = Some("$1"), filenamePaddingDigits = 3)
 
     val filePath = Resplit.inferPathFromFirstMatchedLineOfChunk(
       inputs,
@@ -53,11 +53,11 @@ class ResplitTest extends munit.CatsEffectSuite {
     for {
       output <- Resplit
         .resplit(
-          Inputs(
-            regexMatch = "dog\\d".r,
-            regexSub = None,
+          InputArgs(
+            regexToMatch = "dog\\d".r,
+            regexToSub = None,
             filenamePaddingDigits = 3,
-            outputDirectory = Some("tmp"),
+            outputDirectory = Some(new File("tmp/")),
             inputFileInsteadOfStdin = Some(new File("testfile")),
             suppressMatched = false,
             silentMode = true
