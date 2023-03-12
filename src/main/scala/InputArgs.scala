@@ -25,7 +25,7 @@ object InputArgs {
     OParser.sequence(
       programName("resplit"),
       note(
-        """Splits a file based on a regex. split files will be prefixed by digits,
+        """Splits input based on a regex. Split files will be prefixed by digits,
           |and named by the contents of the matched regular expression.
           |
           |Outputs names of files created to stdout

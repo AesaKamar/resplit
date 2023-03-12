@@ -19,20 +19,20 @@ Streaming "The Adventures of Sherlock Holmes" with `wget` and spliting by chapte
 ## Usage
 ```sh
 > resplit --help
-Usage: resplit [options] regexMatch [regexSub]
+Usage: resplit [options] regexToMatch [regexToSub]
 
 Splits a file based on a regex. split files will be prefixed by digits,
 and named by the contents of the matched regular expression.
 
 Outputs names of files created to stdout
 
-  regexMatch               A regular expression to split the file on
-  regexSub                 A regular expression substitution expression to use to format the output filenames
+  regexToMatch             A regular expression to split the file on
+  regexToSub               A regular expression substitution expression to use to format the output filenames
   -n, --digits <value>     Number of digits to left-pad the split filenames with
   -d, --directory <value>  Directory to write the split files into
   -f, --file <value>       Read from the specified file instead of stdin
-  -s, --quiet              Quiet
   --suppressMatched        Include the line that matched the regexMatch arg as the first line in the split files
+  -s, --quiet              Quiet
   --help                   prints this usage text
 ```
 

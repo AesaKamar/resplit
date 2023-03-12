@@ -14,28 +14,23 @@ object Resplit {
   import scala.util.chaining.*
 
   def resplit(args: InputArgs): fs2.Stream[IO, (Path, Chunk[String])] =
-    // Get from a file if provided, otherwise stdin
     args.inputFileInsteadOfStdin
-      .fold(ifEmpty = fs2.io.stdin[IO](1024)) {
+      .fold(ifEmpty = fs2.io.stdin[IO](bufSize = 1024)) {
         _.getPath
           .pipe(Path.apply)
           .pipe(fs2.io.file.Files[IO].readAll)
       }
       .through(fs2.text.utf8.decode)
       .through(fs2.text.lines)
-      // Split files based on the matched regex
       .through { inputStream =>
         if (args.suppressMatched) inputStream.split(thisLine => args.regexToMatch.matches(thisLine))
         else splitInclusive(inputStream)(thisLine => args.regexToMatch.matches(thisLine))
       }
       .zipWithIndex
-      // Create the directory to store outputs if it doesn't already exist
       .concurrently(createDirectoryOrDoNothing(args.outputDirectory).pipe(Stream.eval))
-      // get the new file name based on the matched regex
       .map { (chunkOfLines, chunkNumber) =>
         (inferPathFromFirstMatchedLineOfChunk(args, chunkOfLines, chunkNumber), chunkOfLines)
       }
-      // Write out a new file stream
       .evalTap { (path, chunkOfLines) =>
         writeChunkToPathAndPrint(chunkOfLines, path, args.silentMode)
       }
