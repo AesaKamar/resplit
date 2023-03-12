@@ -1,4 +1,4 @@
-# resplit
+# `resplit`
 [![Scala Steward badge](https://img.shields.io/badge/Scala_Steward-helping-blue.svg?style=flat&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAQCAMAAAARSr4IAAAAVFBMVEUAAACHjojlOy5NWlrKzcYRKjGFjIbp293YycuLa3pYY2LSqql4f3pCUFTgSjNodYRmcXUsPD/NTTbjRS+2jomhgnzNc223cGvZS0HaSD0XLjbaSjElhIr+AAAAAXRSTlMAQObYZgAAAHlJREFUCNdNyosOwyAIhWHAQS1Vt7a77/3fcxxdmv0xwmckutAR1nkm4ggbyEcg/wWmlGLDAA3oL50xi6fk5ffZ3E2E3QfZDCcCN2YtbEWZt+Drc6u6rlqv7Uk0LdKqqr5rk2UCRXOk0vmQKGfc94nOJyQjouF9H/wCc9gECEYfONoAAAAASUVORK5CYII=)](https://scala-steward.org)
 
 A command line utility for splitting files based on a regular expression
@@ -6,10 +6,10 @@ A command line utility for splitting files based on a regular expression
 -- reimplementation of gnu `csplit` https://man7.org/linux/man-pages/man1/csplit.1.html
 
 
-Built with ScalaNative, fs2 and cats!
+Built with [ScalaNative](https://scala-native.org/en/stable/), [fs2](https://github.com/typelevel/fs2) and [cats](https://github.com/typelevel/cats)!
 
 ## Demo
-Streaming The Adventures of Sherlock Holmes and spliting it based on a roman numeral chapter identifier regex
+Streaming "The Adventures of Sherlock Holmes" with `wget` and spliting by chapter regex into unique files
 
 https://user-images.githubusercontent.com/4334491/224519302-35abbafc-de3a-4be4-92d4-c29352de3617.mov
 
