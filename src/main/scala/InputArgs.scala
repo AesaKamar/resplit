@@ -45,7 +45,6 @@ object InputArgs {
         .action((arg, conf) => conf.copy(filenamePaddingDigits = arg)),
       opt[File]('d', "directory")
         .text("Directory to write the split files into")
-        .validate(_.isDirectory.pipe(Either.cond(_, (), "Not a valid directory")))
         .action((arg, conf) => conf.copy(outputDirectory = Some(arg))),
       opt[File]('f', "file")
         .text("Read from the specified file instead of stdin")

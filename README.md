@@ -38,8 +38,17 @@ Outputs names of files created to stdout
 
 ## Installation
 - Download the latest release for your target platform 
-- `chmod +x` the downloaded file to give it executable permissions
-
+  - ```sh
+    wget https://github.com/aesakamar/resplit/releases/download/v0.1.1/resplit-macos-latest
+    ```
+- Grant executable permissions on the downloaded file 
+  - ```
+    chmod +x resplit-macos-latest
+    ```
+- Move the executable to a place accessible onyour $PATH
+  - ```
+    mv resplit-macos-latest ~/bin/resplit
+    ```
 ## Examples
 
 #### Input: 
