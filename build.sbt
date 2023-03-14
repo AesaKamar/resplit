@@ -1,6 +1,7 @@
 name := "resplit"
 
 scalaVersion := "3.2.2"
+
 // This tells our project
 enablePlugins(ScalaNativePlugin)
 

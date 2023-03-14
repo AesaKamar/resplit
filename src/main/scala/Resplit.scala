@@ -1,4 +1,3 @@
-import cats.Applicative
 import cats.effect.{ExitCode, IO, IOApp}
 import fs2.io.file.Path
 import fs2.{Chunk, Pull, Stream}
@@ -11,25 +10,36 @@ import scala.util.matching.Regex
 object Resplit {
 
   import cats.syntax.applicative.*
+  import cats.syntax.apply.*
   import scala.util.chaining.*
 
   def resplit(args: InputArgs): fs2.Stream[IO, (Path, Chunk[String])] =
-    args.inputFileInsteadOfStdin
-      .fold(ifEmpty = fs2.io.stdin[IO](bufSize = 1024)) {
-        _.getPath
-          .pipe(Path.apply)
-          .pipe(fs2.io.file.Files[IO].readAll)
+    Stream
+      .eval(createDirectoryOrDoNothing(args.outputDirectory))
+      .productR {
+        args.inputFileInsteadOfStdin
+          .fold(ifEmpty = fs2.io.stdin[IO](bufSize = 1024)) {
+            _.getPath
+              .pipe(Path.apply)
+              .pipe(fs2.io.file.Files[IO].readAll)
+          }
       }
       .through(fs2.text.utf8.decode)
       .through(fs2.text.lines)
       .through { inputStream =>
-        if (args.suppressMatched) inputStream.split(thisLine => args.regexToMatch.matches(thisLine))
-        else splitInclusive(inputStream)(thisLine => args.regexToMatch.matches(thisLine))
+        if (args.suppressMatched)
+          inputStream.split(thisLine => args.regexToMatch.matches(thisLine))
+        else
+          splitInclusive(inputStream)(thisLine =>
+            args.regexToMatch.matches(thisLine)
+          )
       }
       .zipWithIndex
-      .concurrently(createDirectoryOrDoNothing(args.outputDirectory).pipe(Stream.eval))
       .map { (chunkOfLines, chunkNumber) =>
-        (inferPathFromFirstMatchedLineOfChunk(args, chunkOfLines, chunkNumber), chunkOfLines)
+        (
+          inferPathFromFirstMatchedLineOfChunk(args, chunkOfLines, chunkNumber),
+          chunkOfLines
+        )
       }
       .evalTap { (path, chunkOfLines) =>
         writeChunkToPathAndPrint(chunkOfLines, path, args.silentMode)
@@ -37,23 +47,28 @@ object Resplit {
 
   /** If the directory exists, return an empty effect Otherwise, go create it!
     */
-  def createDirectoryOrDoNothing(outputDirectory: Option[File]): IO[Unit] = outputDirectory
-    .map(_.getPath)
-    .map(Path.apply)
-    .fold(ifEmpty = IO.unit) { dir =>
-      fs2.io.file
-        .Files[IO]
-        .exists(dir)
-        .flatMap { exists =>
-          if (exists) IO.unit
-          else
-            fs2.io.file
-              .Files[IO]
-              .createDirectory(dir)
-        }
-    }
+  def createDirectoryOrDoNothing(outputDirectory: Option[File]): IO[Unit] =
+    outputDirectory
+      .map(_.getPath)
+      .map(Path.apply)
+      .fold(ifEmpty = IO.unit) { dir =>
+        fs2.io.file
+          .Files[IO]
+          .exists(dir)
+          .flatMap { exists =>
+            if (exists) IO.unit
+            else
+              fs2.io.file
+                .Files[IO]
+                .createDirectory(dir)
+          }
+      }
 
-  def writeChunkToPathAndPrint(c: Chunk[String], path: Path, isSilent: Boolean = false): IO[Unit] =
+  def writeChunkToPathAndPrint(
+      c: Chunk[String],
+      path: Path,
+      isSilent: Boolean = false
+  ): IO[Unit] =
     fs2.Stream
       .chunk(c)
       .intersperse("\n")
@@ -77,11 +92,14 @@ object Resplit {
       .flatMap(args.regexToMatch.findFirstIn(_))
       .map { matchedChars =>
         args.regexToSub.fold(ifEmpty = matchedChars) { providedRegexSub =>
-          try matchedChars.replaceFirst(args.regexToMatch.regex, providedRegexSub)
+          try
+            matchedChars.replaceFirst(args.regexToMatch.regex, providedRegexSub)
           catch
             case _ =>
               if (!args.silentMode)
-                s"invalid regex: on $matchedChars for ${args.regexToMatch.regex} with substitution $providedRegexSub"
+                (s"invalid regex: on $matchedChars " +
+                  s"for ${args.regexToMatch.regex} " +
+                  s"with substitution $providedRegexSub")
                   .pipe(Console.err.println)
               ""
         }
@@ -92,7 +110,6 @@ object Resplit {
       .fold(ifEmpty = Path.apply(s"${iii}_$fileContext")) { dir =>
         Path.apply(s"$dir/${iii}_$fileContext")
       }
-
   }
 
   def leftPad(s: String, n: Int, c: Char): String = s.reverse
@@ -110,10 +127,13 @@ object Resplit {
           hd.indexWhere(f) match {
             case None => go(buffer ++ hd, tl)
             case Some(idx) =>
-              val pfx = hd.take(idx)
-              val b2  = buffer ++ pfx
+              val pfx: Chunk[O] = hd.take(idx)
+              val b2: Chunk[O]  = buffer ++ pfx
 
-              Pull.output1(b2) >> go(Chunk(hd.apply(idx)), tl.cons(hd.drop(idx + 1)))
+              Pull.output1(b2) >> go(
+                Chunk(hd.apply(idx)),
+                tl.cons(hd.drop(idx + 1))
+              )
           }
         case None =>
           if (buffer.nonEmpty) Pull.output1(buffer)
