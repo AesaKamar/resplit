@@ -71,7 +71,7 @@ object InputArgs {
         .action((_, conf) => conf.copy(silentMode = true)),
       opt[Unit]('z', "elide-empty-files")
         .optional()
-        .text("remove empty output files")
+        .text("Remove empty output files")
         .action((_, conf) => conf.copy(elideEmptyFiles = true)),
       help("help").text("prints this usage text")
     )

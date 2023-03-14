@@ -33,6 +33,7 @@ Outputs names of files created to stdout
   -f, --file <value>       Read from the specified file instead of stdin
   --suppressMatched        Include the line that matched the regexMatch arg as the first line in the split files
   -s, --quiet              Quiet
+  -z, --elide-empty-files  Remove empty output files
   --help                   prints this usage text
 ```
 
