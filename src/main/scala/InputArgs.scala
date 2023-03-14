@@ -10,7 +10,8 @@ case class InputArgs(
     outputDirectory: Option[File] = None,
     inputFileInsteadOfStdin: Option[File] = None,
     suppressMatched: Boolean = false,
-    silentMode: Boolean = false
+    silentMode: Boolean = false,
+    elideEmptyFiles: Boolean = false
 )
 
 /** Use [[OParserBuilder]] API to specify how to take input args from the
@@ -68,6 +69,10 @@ object InputArgs {
         .optional()
         .text("Quiet")
         .action((_, conf) => conf.copy(silentMode = true)),
+      opt[Unit]('z', "elide-empty-files")
+        .optional()
+        .text("remove empty output files")
+        .action((_, conf) => conf.copy(elideEmptyFiles = true)),
       help("help").text("prints this usage text")
     )
   }

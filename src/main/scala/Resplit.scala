@@ -34,6 +34,10 @@ object Resplit {
             args.regexToMatch.matches(thisLine)
           )
       }
+      .filter { chunk =>
+        if (args.elideEmptyFiles) chunk.nonEmpty || chunk.forall(_.nonEmpty)
+        else true
+      }
       .zipWithIndex
       .map { (chunkOfLines, chunkNumber) =>
         (
