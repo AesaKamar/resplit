@@ -17,8 +17,8 @@ nativeConfig ~= { configuration =>
 }
 
 libraryDependencies ++= Seq(
-  "co.fs2"           %%% "fs2-core"          % "3.6.1",
-  "co.fs2"           %%% "fs2-io"            % "3.6.1",
+  "co.fs2"           %%% "fs2-core"          % "3.7.0",
+  "co.fs2"           %%% "fs2-io"            % "3.7.0",
   "org.typelevel"    %%% "cats-effect"       % "3.4.8",
   "org.typelevel"    %%% "cats-core"         % "2.9.0",
   "com.github.scopt" %%% "scopt"             % "4.1.0",
